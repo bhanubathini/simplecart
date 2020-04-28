@@ -1,0 +1,310 @@
+<?php
+class Products{
+
+	function __construct(){
+		$this->db = new db();
+		$this->db->dbConnect();
+	}
+
+	function __destruct() {
+    	$this->db->close_connection();
+	}
+
+  function home($params){
+    $banner['banner'] = 1;
+    $banner['retailer'] = $params['retailer'];
+    $data['banner'] = $this->getproductsby($banner);
+    $data['allproducts'] = $this->getproducts($params);
+    $recommended['recommend'] = 1;
+    $recommended['retailer'] = $params['retailer'];
+    $data['recommended'] = $this->getproductsby($recommended);
+    $frequent['frequent'] = 1;
+    $frequent['retailer'] = $params['retailer'];
+    $data['frequent'] = $this->getproductsby($frequent);
+    $instant['instant'] = 1;
+    $instant['retailer'] = $params['retailer'];
+    $data['instant'] = $this->getproductsby($instant);
+    echo json_encode($data);
+  }
+
+	
+
+	function getproducts($params){
+		$page = (int) (!isset($_GET["page"]) ? 1 : $_GET["page"]);
+		$limit = 30;
+			$plist = "";
+		
+		$startpoint = ($page * $limit) - $limit;
+		$statement = "products p ";
+		$productsQuery = $this->db->query("select p.*,pi.* from {$statement}
+      LEFT JOIN productimages pi ON (pi.ProductId=p.productID)
+      order by p.productID desc LIMIT {$startpoint} , {$limit}")  or die(mysql_error());
+        $pnum = mysqli_num_rows($productsQuery);
+        
+        if($pnum > 0)
+        {
+          $i = 1;
+          while($productRow = mysqli_fetch_array($productsQuery))
+          {
+            if(isset($params['retailer']) && $params['retailer'] == 1){
+              $productRow['Price'] = $productRow['retailprice'];
+            }
+            $data[] = array('productID' => $productRow['productID'],
+              'name' => $productRow['ProductName'],
+              'image' => $productRow['Image'],
+              'price' => $productRow['Price'],
+              'details' => $productRow['Description'],
+              'categoryid' => $productRow['CategoryId'],
+              'dateadded' => $productRow['CreatedOn']
+              );
+            $i++;
+
+            $response = array_values($data);
+          }
+          /*$response['Status'] = 1;
+          $response['Message'] = '';*/
+        }
+        else
+        {
+          $response['Status'] = 0;
+          $response['Message'] = 'No products';
+        }
+      return $response;
+		//echo json_encode($data);
+	}
+
+  function getproductsby($params){
+    $page = (int) (!isset($_GET["page"]) ? 1 : $_GET["page"]);
+    $limit = 30;
+      $where = $plist = "";
+
+      
+    
+    
+    $startpoint = ($page * $limit) - $limit;
+    $statement = "products p ";
+    $catjoin = $recentpurchase = " ";
+    $CategoryId = "";
+    if(isset($params['catid']) && $params['catid'] != ""){
+      $CategoryId = $params['catid'];
+      $where = " 
+      WHERE pc.CategoryId = $CategoryId ";
+      $catjoin = " INNER JOIN productcategories pc ON (p.CategoryId = pc.CategoryId)";
+    }
+
+    if(isset($params['frequent']) && $params['frequent'] == 1){
+      $catjoin = " INNER JOIN orderedproducts op ON (op.ProductId=p.productID) ";
+    }
+
+    
+
+    if(isset($params['banner']) && $params['banner'] == 1){
+      $where .= " WHERE banner = 1 ";
+    }
+    if(isset($params['recommended']) && $params['recommended'] == 1){
+      $where .= " WHERE recommend = 1 ";
+    }
+    if(isset($params['instant']) && $params['instant'] == 1){
+      $where .= " WHERE instant = 1 ";
+    }
+   $productsQuery = $this->db->query("select p.*,pi.* from {$statement}
+      LEFT JOIN productimages pi ON (pi.ProductId=p.productID)
+      ".$catjoin." 
+      ".$where."
+      order by p.productID desc LIMIT {$startpoint} , {$limit}")  or die(mysql_error());
+        $pnum = mysqli_num_rows($productsQuery);
+        
+        if($pnum > 0)
+        {
+          $i = 1;
+          while($productRow = mysqli_fetch_array($productsQuery))
+          {
+            if(isset($params['retailer']) && $params['retailer'] == 1){
+              $productRow['Price'] = $productRow['retailprice'];
+            }
+            $data[] = array('productID' => $productRow['productID'],
+              'name' => $productRow['ProductName'],
+              'image' => $productRow['Image'],
+              'price' => $productRow['Price'],
+              'details' => $productRow['Description'],
+              'categoryid' => $productRow['CategoryId'],
+              'dateadded' => $productRow['CreatedOn']
+              );
+            $i++;
+
+            $response = array_values($data);
+          }
+          /*$response['Status'] = 1;
+          $response['Message'] = '';*/
+        }
+        else
+        {
+          $response['Status'] = 0;
+          if($CategoryId != ""){
+            $response['categoryid'] = $CategoryId;
+          }
+          $response['Message'] = 'No products';
+          //$response = [];
+        }
+      if(isset($params['show'])){
+        echo json_encode($response);
+      }else{
+        return $response;
+      }
+      
+    
+  }
+
+
+
+
+	function addToCart($params){
+
+    $checkCartQry = $this->db->query("SELECT * FROM cart WHERE UserId=".$params['userid']." AND ProductId IN (".$params['productid'].") AND Status=2");
+    $num_rows = $this->db->fetchNum($checkCartQry);
+		if($params['type'] == 'add' && $num_rows == 0){
+			$q = $this->db->query("INSERT INTO cart (UserId, ProductId, Quantity, CreatedOn, CreatedBy, Status)
+			VALUES(".$params['userid'].", ".$params['productid'].", ".$params['quantity'].", NOW(), ".$params['userid'].", 2)")  or die(mysqli_error($this->db));
+			$data['Status']	= 1;
+			$data['Message'] = "Product successfully added to cart";
+		}elseif($params['type'] == 'update' || ($num_rows > 0 && $params['type'] == 'add')){die();
+			$q = $this->db->query("UPDATE cart SET Quantity=".$params['quantity']." WHERE UserId=".$params['userid']." AND ProductId IN (".$params['productid'].") AND Status=2")  or die(mysqli_error($this->db));
+			$data['Status']	= 1;
+			$data['Message'] = "Product quantity updated";
+		}elseif($params['type'] == 'remove' || $params['quantity'] == 0){
+      $productids = $params['productid'];
+      $re = '/^\d+(?:,\d+)*$/';
+
+      if ( preg_match($re, $productids) ){
+          $cond = "IN (".$productids.")";
+          $message = "Cart cleared";
+      }else{
+          $cond = "=".$productids;
+          $message = "Product removed from cart";
+      }
+			$q = $this->db->query("UPDATE cart SET Status=0 WHERE UserId=".$params['userid']." AND ProductId ".$cond." AND Status=2")  or die(mysqli_error($this->db));
+			$data['Status']	= 1;
+			$data['Message'] = $message;
+		}
+    echo json_encode($data);
+	}
+
+	function getCartDetails($params){
+		$cartQuery = $this->db->query("SELECT c.*,p.* FROM cart c
+			INNER JOIN products p ON (c.ProductId=p.productID)
+			WHERE c.UserId=".$params['userid']." AND c.Status=2")  or die(mysqli_error($this->db));
+	   $cartNum = mysqli_num_rows($cartQuery);
+     $cartcount = 0;
+        $TotalAmount = 0;
+        if($cartNum > 0){
+        	$data['Status']	= 1;
+          $data['Message'] = "Success";
+          	$i = 1;
+
+          	while($cartRow = mysqli_fetch_array($cartQuery)){
+              if(isset($params['retailer']) && $params['retailer'] == 1){
+                $cartRow['Price'] = $cartRow['retailprice'];
+              }
+              $data['cartId'] = $cartRow['cartId'];
+          		$data['productID'] = $cartRow['productID'];
+                $data['name'] = $cartRow['ProductName'];
+                $data['price'] = $cartRow['Price'];
+                $data['qtyprice'] = $cartRow['Quantity']*$cartRow['Price'];
+                $data['details'] = $cartRow['Description'];
+                $data['Quantity'] = $cartRow['Quantity'];
+                $TotalAmount += $cartRow['Quantity']*$cartRow['Price'];
+                $cart[] = $data;
+                $cartcount++;
+          	}
+            $cartdetails['cartdetails'] = array_values($cart);
+            $cartdetails['TotalAmount'] = $TotalAmount;
+            $cartdetails['cartcount'] = $cartNum;
+        }else{
+          $cartdetails['Status'] = 0;
+          $cartdetails['Message'] = "Cart is empty";
+          $cartdetails['cartcount'] = $cartNum;
+        }
+        return $cartdetails;
+	}
+
+	function getCart($params){
+		$data = $this->getCartDetails($params);
+    echo json_encode($data);
+	}
+
+	function checkout($params){
+    $users = new Users();
+    $data['address'] = $users->getAddresses($params);
+		$data['checkout'] = $this->getCartDetails($params);
+    echo json_encode($data);
+	}
+
+  function confirmOrder($params){    
+
+    $cart = $this->getCartDetails($params);
+    $OrderId = 0;
+    $users = new Users();
+    $AddressId = $users->updateAddress($params);
+    if($cart['cartcount'] > 0){
+      $orderQry = $this->db->query("INSERT INTO orders (UserId, AddressId, TotalAmount, Status, CreatedOn) VALUES ('".$params['userid']."', '".$AddressId."', '".$cart['TotalAmount']."', 1, NOW()) ") or die(mysqli_error());
+      $OrderId = $this->db->insertId();
+    }
+
+    if($OrderId > 0){
+      $data['Status'] = 1;
+      
+          foreach ($cart['cartdetails'] as $cartdetails) {
+            $q = $this->db->query("UPDATE cart SET Status=0 WHERE UserId=".$params['userid']." AND cartId='".$cartdetails['cartId']."'")  or die(mysqli_error($this->db));
+             $orderDetailsQry = $this->db->query("INSERT INTO orderedproducts (UserId, ProductId, orderId,  Price, Quantity, DeliveryStatus, Status, CreatedOn) VALUES ('".$params['userid']."', '".$cartdetails['productID']."', '".$OrderId."', '".$cartdetails['price']."', '".$cartdetails['Quantity']."', 2, 1, NOW()) ") or die(mysqli_error());
+
+          }
+          $data['Message'] = "Order successfully placed";
+
+    }else{
+      $data['Status'] = 0;
+      $data['Message'] = "Unable to place order";
+    }
+
+    
+    echo json_encode($data);
+
+  }
+
+  function categories(){
+    $categoriesQry = $this->db->query("select * from productcategories")  or die(mysql_error());
+        $pnum = mysqli_num_rows($categoriesQry);
+        
+        if($pnum > 0)
+        {
+          $i = 1;
+          while($productRow = mysqli_fetch_array($categoriesQry))
+          {
+
+            if($productRow['CategoryParentId'] == 0){
+              $categoryArray[$productRow['CategoryId']] = array('id' => $productRow['CategoryId'], 'name' => $productRow['CategoryName'], 'sub' => []);
+              //$categoryIds = 
+            }else{
+              $categoryArray[$productRow['CategoryParentId']]['sub'][] = array('id' => $productRow['CategoryId'], 'name' => $productRow['CategoryName']);
+              $params['catid'] = $productRow['CategoryId'];
+              $getproducts = $this->getproductsby($params);
+
+              $categoryArray[$productRow['CategoryParentId']]['products'][] = $getproducts;
+            }
+            if((isset($categoryArray[$productRow['CategoryId']]['sub']) && empty($categoryArray[$productRow['CategoryId']]['sub']))){
+              $params['catid'] = $productRow['CategoryId'];
+              $getproducts = $this->getproductsby($params);
+              $categoryArray[$productRow['CategoryId']]['products'][] = $getproducts;
+            }
+            
+            $i++;
+          }
+          echo json_encode(array_values($categoryArray));
+        }
+  }
+
+
+}
+
+$productsObj = new Products();
+
+?>

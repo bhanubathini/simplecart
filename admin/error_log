@@ -1,0 +1,13 @@
+[09-Dec-2014 10:43:01 UTC] PHP Warning:  session_start(): Cannot send session cache limiter - headers already sent (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 2
+[09-Dec-2014 10:43:01 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 5
+[09-Dec-2014 10:43:01 UTC] PHP Notice:  Undefined index: user_data in /home/bhanu38/public_html/naani/admin/message.php on line 43
+[09-Dec-2014 10:44:15 UTC] PHP Warning:  session_start(): Cannot send session cache limiter - headers already sent (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 2
+[09-Dec-2014 10:44:15 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 5
+[09-Dec-2014 10:44:15 UTC] PHP Notice:  Undefined index: user_data in /home/bhanu38/public_html/naani/admin/message.php on line 67
+[09-Dec-2014 10:46:58 UTC] PHP Warning:  session_start(): Cannot send session cache limiter - headers already sent (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 2
+[09-Dec-2014 10:46:58 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 5
+[09-Dec-2014 10:46:58 UTC] PHP Notice:  Undefined index: user_data in /home/bhanu38/public_html/naani/admin/message.php on line 69
+[09-Dec-2014 10:47:52 UTC] PHP Warning:  session_start(): Cannot send session cache limiter - headers already sent (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 2
+[09-Dec-2014 10:47:52 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/bhanu38/public_html/naani/admin/message.php:1) in /home/bhanu38/public_html/naani/admin/session.php on line 5
+[09-Dec-2014 10:47:52 UTC] PHP Notice:  Undefined index: user_data in /home/bhanu38/public_html/naani/admin/message.php on line 83
+[09-Dec-2014 10:50:37 UTC] PHP Notice:  Undefined index: user_data in /home/bhanu38/public_html/naani/admin/message.php on line 83
